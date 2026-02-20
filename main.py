@@ -3,10 +3,10 @@ from generateMap import generateMaze
 
 
 start = (0, 0)  # position de départ
-goal = (4, 4)   # position d'arrivée
+goal = (64, 89)   # position d'arrivée
 
 #génération du grid et de la reward map (voir generateMap.py)
-grid, rewardMap = generateMaze(5, 5, start, goal, mode="simple")
+grid, rewardMap = generateMaze(100, 100, start, goal, mode="simple")
 
 #création de l'instance de Maze
 laby = Maze(grid, rewardMap, start, goal)
@@ -30,3 +30,7 @@ print(laby.insideGrid((5, 5)))
 
 print("est ce que (0,0) est franchissable ?")
 print(laby.isPassable((0, 0)))
+
+print("chemin optimal du start au goal :")
+path = laby.solveAstar()
+print(path)
