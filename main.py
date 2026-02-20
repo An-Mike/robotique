@@ -2,13 +2,13 @@ from maze import Maze
 from generateMap import generateMaze
 
 
-rows, cols = 10, 10 # dimensions souhaité du labyrinthe
+rows, cols = 100, 100 # dimensions souhaité du labyrinthe
 
 start = (0, 0)  # position de départ
-goal = (9, 9)   # position d'arrivée
+goal = (99, 99)   # position d'arrivée
 
 #génération du grid et de la reward map (voir generateMap.py)
-grid, rewardMap = generateMaze(rows, cols, start, goal, mode="blocked", seed=42)
+grid, rewardMap = generateMaze(rows, cols, start, goal, mode="simple", seed=42)
 
 #création de l'instance de Maze
 laby = Maze(grid, rewardMap, start, goal)
@@ -34,5 +34,6 @@ print("est ce que (0,0) est franchissable ?")
 print(laby.isPassable((0, 0)))
 
 print("chemin optimal du start au goal :")
-path = laby.solveAstar()
+#path = laby.solveAstar()
+path = laby.solveAstarWithDiag()
 print(path)
