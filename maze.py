@@ -73,7 +73,7 @@ class Maze: #classe Maze
                 total_cost = g_score[self.goal]
                 
                 # Afficher la visualisation avec le chemin trouvé et les cellules explorées
-                self.visualizePath(final_path, explored, total_cost, len(explored))
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='A*')
                 
                 return final_path
             
@@ -92,7 +92,7 @@ class Maze: #classe Maze
                         open_set.put((f_score[neighbor], neighbor))
         
         # Si aucun chemin n'est trouvé, afficher la grille avec les cellules explorées
-        self.visualizePath(None, explored, None, len(explored) if explored else 0)
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A*')
         return None # retourne None si aucun chemin n'est trouvé (goal inaccessible)
     
     def solveAstarWithDiag(self): # A* avec déplacements diagonaux autorisés et coût euclidien
@@ -138,7 +138,7 @@ class Maze: #classe Maze
                 total_cost = g_score[self.goal]
                 
                 # Afficher la visualisation avec le chemin trouvé et les cellules explorées
-                self.visualizePath(final_path, explored, total_cost, len(explored))
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='A* (diag)')
                 
                 return final_path
             
@@ -156,10 +156,10 @@ class Maze: #classe Maze
                         open_set.put((f_score[neighbor], neighbor))
         
         # Si aucun chemin n'est trouvé, afficher la grille avec les cellules explorées
-        self.visualizePath(None, explored, None, len(explored) if explored else 0)
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A* (diag)')
         return None # retourne None si aucun chemin n'est trouvé (goal inaccessible)
     
-    def visualizePath(self, path, explored=None, cost=None, num_explored=None):
+    def visualizePath(self, path, explored=None, cost=None, num_explored=None, algo_name=None):
         """
         Visualise la grille avec le chemin trouvé et les cellules explorées
         path : liste des positions du chemin trouvé
@@ -220,7 +220,8 @@ class Maze: #classe Maze
         ax.legend(handles=legend_patches, loc='upper left', bbox_to_anchor=(1.05, 1))
         
         # Afficher le coût et le nombre de cellules explorées dans le titre
-        title_parts = ['Visualisation de l\'algorithme A*']
+        algo_display = algo_name if algo_name is not None else 'A*'
+        title_parts = [f'Visualisation de l\'algorithme: {algo_display}']
         if cost is not None:
             title_parts.append(f'Coût: {cost:.2f}')
         if num_explored is not None:
@@ -278,7 +279,7 @@ class Maze: #classe Maze
                 total_cost = g_score[current_state]
 
                 # visualiser et retourner
-                self.visualizePath(final_path, explored, total_cost, len(explored))
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='A* (dir cost)')
                 return final_path
 
             # explorer voisins
@@ -305,5 +306,100 @@ class Maze: #classe Maze
                         open_set.put((f_score[neighbor_state], neighbor_state))
 
         # aucun chemin trouvé -> afficher exploré
-        self.visualizePath(None, explored, None, len(explored) if explored else 0)
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A* (dir cost)')
+        return None
+
+    def dijkstra(self):
+        """
+        Résolution par l'algorithme de Dijkstra (4 directions, coût 1 par déplacement).
+        Affiche la grille finale avec le coût total et le nombre de cellules explorées.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        """
+        from queue import PriorityQueue
+
+        open_set = PriorityQueue()
+        open_set.put((0, self.start))
+
+        came_from = {}
+        g_score = {self.start: 0.0}
+
+        explored = set()
+
+        while not open_set.empty():
+            current = open_set.get()[1]
+
+            explored.add(current)
+
+            if current == self.goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                total_cost = g_score[self.goal]
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='Dijkstra')
+                return final_path
+
+            for neighbor in self.getPassableNeighbors(current):
+                tentative_g = g_score[current] + 1.0
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    if neighbor not in [i[1] for i in open_set.queue]:
+                        open_set.put((g_score[neighbor], neighbor))
+
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='Dijkstra')
+        return None
+
+    def dijkstraWithDiag(self):
+        """
+        Résolution par l'algorithme de Dijkstra en autorisant les déplacements diagonaux.
+        Le coût de déplacement est la distance euclidienne entre cases.
+        Affiche la grille finale avec le coût total et le nombre de cellules explorées.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        """
+        from queue import PriorityQueue
+        import math
+
+        def move_cost(a, b):
+            return math.hypot(a[0] - b[0], a[1] - b[1])
+
+        open_set = PriorityQueue()
+        open_set.put((0, self.start))
+
+        came_from = {}
+        g_score = {self.start: 0.0}
+
+        explored = set()
+
+        while not open_set.empty():
+            current = open_set.get()[1]
+
+            explored.add(current)
+
+            if current == self.goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                total_cost = g_score[self.goal]
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='Dijkstra (diag)')
+                return final_path
+
+            for neighbor in self.getPassableNeighborsWithDiag(current):
+                tentative_g = g_score[current] + move_cost(current, neighbor)
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    if neighbor not in [i[1] for i in open_set.queue]:
+                        open_set.put((g_score[neighbor], neighbor))
+
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='Dijkstra (diag)')
         return None
