@@ -2,11 +2,13 @@ from maze import Maze
 from generateMap import generateMaze
 
 
+rows, cols = 10, 10 # dimensions souhaité du labyrinthe
+
 start = (0, 0)  # position de départ
-goal = (64, 89)   # position d'arrivée
+goal = (9, 9)   # position d'arrivée
 
 #génération du grid et de la reward map (voir generateMap.py)
-grid, rewardMap = generateMaze(100, 100, start, goal, mode="simple")
+grid, rewardMap = generateMaze(rows, cols, start, goal, mode="blocked", seed=42)
 
 #création de l'instance de Maze
 laby = Maze(grid, rewardMap, start, goal)

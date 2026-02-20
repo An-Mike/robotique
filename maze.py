@@ -147,3 +147,76 @@ class Maze: #classe Maze
         
         plt.tight_layout()
         plt.show()
+
+    def solveAstarWithDirCost(self, epsilon=0.25):
+        """
+        Variante de A* qui ajoute un coût fixe `epsilon` quand on change de direction.
+        - `epsilon`: coût additionnel appliqué lorsqu'on change de direction par rapport
+          au mouvement précédent.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        Affiche la grille en utilisant `visualizePath` (avec les cellules explorées).
+        """
+        from queue import PriorityQueue
+
+        def heuristic(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+        # Etat : (position, direction) où direction est un tuple (dx,dy) ou None pour le start
+        start_state = (self.start, None)
+
+        open_set = PriorityQueue()
+        open_set.put((heuristic(self.start, self.goal), start_state))
+
+        came_from = {}  # map state -> previous state
+        g_score = {start_state: 0.0}
+        f_score = {start_state: heuristic(self.start, self.goal)}
+
+        explored = set()
+
+        while not open_set.empty():
+            current_state = open_set.get()[1]
+            current_pos, current_dir = current_state
+
+            explored.add(current_pos)
+
+            # Si on a atteint le goal (quelque soit la direction)
+            if current_pos == self.goal:
+                # reconstruire le chemin en ignorant les directions
+                path = []
+                s = current_state
+                while s in came_from:
+                    path.append(s[0])
+                    s = came_from[s]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                # visualiser et retourner
+                self.visualizePath(final_path, explored)
+                return final_path
+
+            # explorer voisins
+            for neighbor in self.getPassableNeighbors(current_pos):
+                # direction du mouvement actuel
+                move_dir = (neighbor[0] - current_pos[0], neighbor[1] - current_pos[1])
+
+                # coût de base pour se déplacer
+                base_cost = 1.0
+                # pénalité si on change de direction (si on avait une direction précédente)
+                dir_penalty = 0.0 if (current_dir is None or current_dir == move_dir) else float(epsilon)
+
+                tentative_g = g_score[current_state] + base_cost + dir_penalty
+
+                neighbor_state = (neighbor, move_dir)
+
+                if neighbor_state not in g_score or tentative_g < g_score[neighbor_state]:
+                    came_from[neighbor_state] = current_state
+                    g_score[neighbor_state] = tentative_g
+                    f_score[neighbor_state] = tentative_g + heuristic(neighbor, self.goal)
+
+                    # ajouter à la file si pas déjà présent
+                    if neighbor_state not in [i[1] for i in open_set.queue]:
+                        open_set.put((f_score[neighbor_state], neighbor_state))
+
+        # aucun chemin trouvé -> afficher exploré
+        self.visualizePath(None, explored)
+        return None

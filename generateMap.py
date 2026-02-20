@@ -2,16 +2,24 @@ import random
 from collections import deque
 
 
-def generateMaze(rows, cols, start, goal, mode="empty"):
+def generateMaze(rows, cols, start, goal, mode="empty", seed=None):
     """
-    mode :
+    Génère une grille et une reward map.
+
+    Arguments:
+    - rows, cols: dimensions
+    - start, goal: tuples (x, y)
+    - mode:
         - "empty"  -> aucune obstacle
         - "simple" -> obstacles aléatoires mais chemin garanti
         - "blocked" -> aucun chemin possible entre start et goal
+    - seed: int ou None. Si fourni, rend la génération reproductible.
+
+    Retourne: (grid, reward_map)
     """
 
-    # Création d'une grille vide
-    grid = [[0 for _ in range(cols)] for _ in range(rows)]
+    # Utiliser un générateur local pour pouvoir être reproductible sans reseeder
+    rng = random.Random(seed) if seed is not None else random
 
     # Vérification start/goal valides
     sx, sy = start
@@ -22,30 +30,39 @@ def generateMaze(rows, cols, start, goal, mode="empty"):
     if not (0 <= gx < rows and 0 <= gy < cols):
         raise ValueError("Goal hors grille")
 
-    # Mode EMPTY (aucun obstacle)
+    # Création d'une grille vide
+    def make_empty_grid():
+        return [[0 for _ in range(cols)] for _ in range(rows)]
+
+    grid = make_empty_grid()
+
     if mode == "empty":
-        pass  # rien à faire
+        pass
 
-    # Mode SIMPLE (obstacles mais chemin garanti)
     elif mode == "simple":
-
-        # Ajouter obstacles aléatoires
         obstacle_density = 0.25
 
-        for i in range(rows):
-            for j in range(cols):
-                if (i, j) != start and (i, j) != goal:
-                    if random.random() < obstacle_density:
-                        grid[i][j] = 1
+        # Générer jusqu'à obtenir un labyrinthe avec chemin (boucle contrôlée)
+        max_attempts = 1000
+        for attempt in range(max_attempts):
+            grid = make_empty_grid()
+            for i in range(rows):
+                for j in range(cols):
+                    if (i, j) != start and (i, j) != goal:
+                        if rng.random() < obstacle_density:
+                            grid[i][j] = 1
 
-        # Vérifier qu'un chemin existe (BFS)
-        if not pathExists(grid, start, goal):
-            return generateMaze(rows, cols, start, goal, mode)
+            # Toujours garantir start et goal libres
+            grid[sx][sy] = 0
+            grid[gx][gy] = 0
 
-    # Mode BLOCKED (aucun chemin possible)
+            if pathExists(grid, start, goal):
+                break
+        else:
+            raise RuntimeError("Impossible de générer un labyrinthe simple avec chemin après plusieurs tentatives")
+
     elif mode == "blocked":
-
-        # Créer une barrière horizontale au milieu
+        grid = make_empty_grid()
         mid = rows // 2
         for j in range(cols):
             grid[mid][j] = 1
@@ -57,13 +74,8 @@ def generateMaze(rows, cols, start, goal, mode="empty"):
     else:
         raise ValueError("Mode inconnu")
 
-    # Toujours garantir start et goal libres
-    grid[sx][sy] = 0
-    grid[gx][gy] = 0
-
     # Création reward map cohérente avec la grid
     reward_map = []
-
     for i in range(rows):
         row = []
         for j in range(cols):
