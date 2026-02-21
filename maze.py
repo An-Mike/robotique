@@ -480,3 +480,117 @@ class Maze: #classe Maze
 
         self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A* (perfect heuristic)')
         return None
+
+    def solveAstarNegative(self):
+        """
+        Résolution par A* en utilisant la reward map pour calculer les coûts de déplacement.
+        4 directions autorisées (pas de diagonales).
+        Coût de déplacement = 1 - (reward / 100)
+        - Les rewards positives donnent des coûts bas
+        - Les rewards négatives donnent des coûts élevés
+        Affiche la grille finale avec le coût total et le nombre de cellules explorées.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        """
+        from queue import PriorityQueue
+
+        def heuristic(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])  # Distance de Manhattan
+
+        def move_cost(pos):
+            # Coût basé sur la reward de la cellule destination
+            reward = self.reward[pos[0]][pos[1]]
+            return 1 - (reward / 100.0)
+
+        open_set = PriorityQueue()
+        open_set.put((0, self.start))
+
+        came_from = {}
+        g_score = {self.start: 0.0}
+        f_score = {self.start: heuristic(self.start, self.goal)}
+
+        explored = set()
+
+        while not open_set.empty():
+            current = open_set.get()[1]
+
+            explored.add(current)
+
+            if current == self.goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                total_cost = g_score[self.goal]
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='A* (reward-based)')
+                return final_path
+
+            for neighbor in self.getPassableNeighbors(current):
+                tentative_g = g_score[current] + move_cost(neighbor)
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f_score[neighbor] = tentative_g + heuristic(neighbor, self.goal)
+
+                    if neighbor not in [i[1] for i in open_set.queue]:
+                        open_set.put((f_score[neighbor], neighbor))
+
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A* (reward-based)')
+        return None
+
+    def dijkstraNegative(self):
+        """
+        Résolution par Dijkstra en utilisant la reward map pour calculer les coûts de déplacement.
+        4 directions autorisées (pas de diagonales).
+        Coût de déplacement = 1 - (reward / 100)
+        - Les rewards positives donnent des coûts bas
+        - Les rewards négatives donnent des coûts élevés
+        Affiche la grille finale avec le coût total et le nombre de cellules explorées.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        """
+        from queue import PriorityQueue
+
+        def move_cost(pos):
+            # Coût basé sur la reward de la cellule destination
+            reward = self.reward[pos[0]][pos[1]]
+            return 1 - (reward / 100.0)
+
+        open_set = PriorityQueue()
+        open_set.put((0, self.start))
+
+        came_from = {}
+        g_score = {self.start: 0.0}
+
+        explored = set()
+
+        while not open_set.empty():
+            current = open_set.get()[1]
+
+            explored.add(current)
+
+            if current == self.goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                total_cost = g_score[self.goal]
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='Dijkstra (reward-based)')
+                return final_path
+
+            for neighbor in self.getPassableNeighbors(current):
+                tentative_g = g_score[current] + move_cost(neighbor)
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    if neighbor not in [i[1] for i in open_set.queue]:
+                        open_set.put((g_score[neighbor], neighbor))
+
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='Dijkstra (reward-based)')
+        return None
