@@ -403,3 +403,80 @@ class Maze: #classe Maze
 
         self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='Dijkstra (diag)')
         return None
+
+    def solveAstarWithPerfectHeuristic(self):
+        """
+        Résolution par A* avec une heuristique parfaite (déplacements diagonaux).
+        L'heuristique est exactement égale au coût restant pour atteindre le goal.
+        Autorise les 8 déplacements (4 cardinaux + 4 diagonaux) avec coût euclidien.
+        Cela signifie que seules les cellules du chemin optimal sont explorées.
+        Affiche la grille finale avec le coût total et le nombre de cellules explorées.
+        Retourne le chemin (liste de positions) ou None si aucun chemin trouvé.
+        """
+        from queue import PriorityQueue
+        import math
+
+        def move_cost(a, b):
+            return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
+
+        # Pré-calculer les distances exactes au goal pour chaque cellule (heuristique parfaite)
+        # On utilise Dijkstra rétrograde depuis le goal pour calculer le coût exact
+        exact_cost_to_goal = {}
+        pq = PriorityQueue()
+        pq.put((0, self.goal))
+        exact_cost_to_goal[self.goal] = 0
+
+        while not pq.empty():
+            cost, pos = pq.get()
+            if pos in exact_cost_to_goal and exact_cost_to_goal[pos] < cost:
+                continue
+            for neighbor in self.getPassableNeighborsWithDiag(pos):
+                new_cost = cost + move_cost(pos, neighbor)  # Coût euclidien
+                if neighbor not in exact_cost_to_goal or new_cost < exact_cost_to_goal[neighbor]:
+                    exact_cost_to_goal[neighbor] = new_cost
+                    pq.put((new_cost, neighbor))
+
+        def perfect_heuristic(pos):
+            # Retourner le coût exact si connu, sinon 0 (ne devrait pas arriver)
+            return exact_cost_to_goal.get(pos, 0)
+
+        # Maintenant résoudre avec A* en utilisant la heuristique parfaite
+        open_set = PriorityQueue()
+        open_set.put((0, self.start))
+
+        came_from = {}
+        g_score = {self.start: 0.0}
+        f_score = {self.start: perfect_heuristic(self.start)}
+
+        explored = set()
+
+        while not open_set.empty():
+            current = open_set.get()[1]
+
+            explored.add(current)
+
+            if current == self.goal:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.append(self.start)
+                final_path = path[::-1]
+
+                total_cost = g_score[self.goal]
+                self.visualizePath(final_path, explored, total_cost, len(explored), algo_name='A* (perfect heuristic)')
+                return final_path
+
+            for neighbor in self.getPassableNeighborsWithDiag(current):
+                tentative_g = g_score[current] + move_cost(current, neighbor)  # Coût euclidien
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f_score[neighbor] = tentative_g + perfect_heuristic(neighbor)
+
+                    if neighbor not in [i[1] for i in open_set.queue]:
+                        open_set.put((f_score[neighbor], neighbor))
+
+        self.visualizePath(None, explored, None, len(explored) if explored else 0, algo_name='A* (perfect heuristic)')
+        return None

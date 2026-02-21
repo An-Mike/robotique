@@ -2,10 +2,10 @@ from maze import Maze
 from generateMap import generateMaze
 
 
-rows, cols = 100, 100 # dimensions souhaité du labyrinthe
+rows, cols = 50, 50 # dimensions souhaité du labyrinthe
 
-start = (50, 50)  # position de départ
-goal = (80, 80)   # position d'arrivée
+start = (0, 0)  # position de départ
+goal = (49,49)   # position d'arrivée
 
 #génération du grid et de la reward map (voir generateMap.py)
 grid, rewardMap = generateMaze(rows, cols, start, goal, mode="simple", seed=42)
@@ -36,5 +36,6 @@ print(laby.isPassable((0, 0)))
 print("chemin optimal du start au goal :")
 #path = laby.solveAstar()
 #path = laby.solveAstarWithDiag()
-path = laby.dijkstraWithDiag()
+#path = laby.dijkstraWithDiag()
+path = laby.solveAstarWithPerfectHeuristic()
 print(path)
